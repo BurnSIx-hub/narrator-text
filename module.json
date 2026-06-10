@@ -1,0 +1,22 @@
+{
+  "id": "narrator-text",
+  "title": "Narrator Text",
+  "description": "Позволяет ГМ отображать красивые надписи на экранах всех игроков.",
+  "version": "1.1.0",
+  "compatibility": {
+    "minimum": "13",
+    "verified": "14"
+  },
+  "authors": [{ "name": "BurnSIx-hub" }],
+  "url": "https://github.com/BurnSIx-hub/narrator-text",
+  "bugs": "https://github.com/BurnSIx-hub/narrator-text/issues",
+  "manifest": "https://github.com/BurnSIx-hub/narrator-text/releases/latest/download/module.json",
+  "download": "https://github.com/BurnSIx-hub/narrator-text/releases/download/v1.1.0/module.zip",
+  "esmodules": ["scripts/narrator-text.mjs"],
+  "styles": ["styles/narrator-text.css"],
+  "socket": true,
+  "languages": [
+    { "lang": "ru", "name": "Russian", "path": "lang/ru.json" },
+    { "lang": "en", "name": "English", "path": "lang/en.json" }
+  ]
+}
