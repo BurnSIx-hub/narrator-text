@@ -10,36 +10,47 @@ const SOCKET_EVENT = `module.${MODULE_ID}`;
    КОНСТАНТЫ
 ══════════════════════════════════════════════════ */
 
-const FONT_OPTIONS = {
-  "Alegreya":          "Alegreya (Серифный)",
-  "Caveat":            "Caveat (Рукописный)",
-  "Pacifico":          "Pacifico (Декоративный)",
-  "Palatino Linotype": "Palatino (Классический)",
-  "Georgia":           "Georgia (Газетный)",
-  "Times New Roman":   "Times New Roman",
-};
+// Локализация: строки лежат в lang/ru.json и lang/en.json (ключи NARRATOR.*)
+const L  = (k)    => game.i18n.localize(`NARRATOR.${k}`);
+const LF = (k, d) => game.i18n.format(`NARRATOR.${k}`, d);
 
-const ANIM_OPTIONS = {
-  "fade":         "Плавное (Fade)",
-  "scale":        "Масштаб (Scale)",
-  "slide-top":    "Сверху (↓)",
-  "slide-bottom": "Снизу (↑)",
-  "instant":      "Мгновенно",
-  "typewriter":   "Печатная машинка",
-};
+// Опции вычисляются лениво — на момент загрузки модуля i18n ещё не готов
+function FONT_OPTS() {
+  return {
+    "Alegreya":          `Alegreya (${L("FontSerif")})`,
+    "Caveat":            `Caveat (${L("FontHandwritten")})`,
+    "Pacifico":          `Pacifico (${L("FontDecorative")})`,
+    "Palatino Linotype": `Palatino (${L("FontClassic")})`,
+    "Georgia":           `Georgia (${L("FontNewspaper")})`,
+    "Times New Roman":   "Times New Roman",
+  };
+}
 
-const POS_OPTIONS = {
-  "top-left":      "↖ Верх-Лево",
-  "top-center":    "↑ Верх-Центр",
-  "top-right":     "↗ Верх-Право",
-  "middle-left":   "← Центр-Лево",
-  "middle-center": "⊙ Центр",
-  "middle-right":  "→ Центр-Право",
-  "bottom-left":   "↙ Низ-Лево",
-  "bottom-center": "↓ Низ-Центр",
-  "bottom-right":  "↘ Низ-Право",
-  "custom":        "📍 Своя позиция",
-};
+function ANIM_OPTS() {
+  return {
+    "fade":         L("AnimFade"),
+    "scale":        L("AnimScale"),
+    "slide-top":    L("AnimSlideTop"),
+    "slide-bottom": L("AnimSlideBottom"),
+    "instant":      L("Instant"),
+    "typewriter":   L("Typewriter"),
+  };
+}
+
+function POS_OPTS() {
+  return {
+    "top-left":      L("PosTopLeft"),
+    "top-center":    L("PosTopCenter"),
+    "top-right":     L("PosTopRight"),
+    "middle-left":   L("PosMiddleLeft"),
+    "middle-center": L("PosMiddleCenter"),
+    "middle-right":  L("PosMiddleRight"),
+    "bottom-left":   L("PosBottomLeft"),
+    "bottom-center": L("PosBottomCenter"),
+    "bottom-right":  L("PosBottomRight"),
+    "custom":        L("CustomPos"),
+  };
+}
 
 const DEFAULT_STYLE = {
   font: "Alegreya", fontSize: 64, color: "#ffffff",
@@ -196,7 +207,7 @@ class NarratorTextApp extends foundry.applications.api.ApplicationV2 {
 
   static DEFAULT_OPTIONS = {
     id: "narrator-text-app",
-    window:   { title: "Narrator Text", resizable: false },
+    window:   { title: "NARRATOR.Title", resizable: false },
     position: { width: 360, height: "auto" },
     // Без classes: ["no-pip"] окно в v14 может захватывать фокус канваса
     classes:  ["narrator-text-window"],
@@ -248,17 +259,17 @@ class NarratorTextApp extends foundry.applications.api.ApplicationV2 {
     const s = this._style;
 
     const tabBar = ["compose","style","anim","history"].map(t => {
-      const labels = { compose:"✏️ Текст", style:"🎨 Стиль", anim:"✨ Анимация", history:"📜 История" };
+      const labels = { compose:L("TabText"), style:L("TabStyle"), anim:L("TabAnim"), history:L("TabHistory") };
       return `<button class="narrator-tab-btn${this._tab===t?" active":""}" data-tab="${t}">${labels[t]}</button>`;
     }).join("");
 
-    const fontOpts = Object.entries(FONT_OPTIONS)
+    const fontOpts = Object.entries(FONT_OPTS())
       .map(([v,l]) => `<option value="${v}"${s.font===v?" selected":""}>${l}</option>`).join("");
 
-    const animInBtns = Object.entries(ANIM_OPTIONS)
+    const animInBtns = Object.entries(ANIM_OPTS())
       .map(([v,l]) => `<button class="narrator-anim-btn${s.animIn===v?" selected":""}" data-anim-in="${v}">${l}</button>`).join("");
 
-    const animOutBtns = Object.entries(ANIM_OPTIONS).filter(([v]) => v !== "typewriter")
+    const animOutBtns = Object.entries(ANIM_OPTS()).filter(([v]) => v !== "typewriter")
       .map(([v,l]) => `<button class="narrator-anim-btn${s.animOut===v?" selected":""}" data-anim-out="${v}">${l}</button>`).join("");
 
     return `
@@ -267,90 +278,90 @@ class NarratorTextApp extends foundry.applications.api.ApplicationV2 {
 <!-- ── ТЕКСТ ── -->
 <div class="narrator-tab-panel${this._tab==="compose"?" active":""}" data-panel="compose">
 
-  <div class="narrator-section" style="margin-top:6px">Показать игрокам</div>
+  <div class="narrator-section" style="margin-top:6px">${L("ShowToPlayers")}</div>
   <div id="nt-targets">${this._buildTargetsHTML()}</div>
 
   <div class="narrator-check-field" style="margin:8px 0 4px">
     <input type="checkbox" id="nt-stack"${this._stack?" checked":""}>
-    <label for="nt-stack">Несколько надписей одновременно</label>
+    <label for="nt-stack">${L("AllowStack")}</label>
   </div>
 
   <div id="nt-msgs">${this._buildMsgsHTML()}</div>
-  ${this._stack ? `<button class="narrator-add-item-btn" id="nt-add">+ Добавить надпись</button>` : ""}
-  <button class="narrator-send-btn" id="nt-send">▶ Показать всем</button>
+  ${this._stack ? `<button class="narrator-add-item-btn" id="nt-add">${L("AddMessage")}</button>` : ""}
+  <button class="narrator-send-btn" id="nt-send">${L("Send")}</button>
 </div>
 
 <!-- ── СТИЛЬ ── -->
 <div class="narrator-tab-panel${this._tab==="style"?" active":""}" data-panel="style">
   <div class="narrator-field">
-    <label>Шрифт</label>
+    <label>${L("Font")}</label>
     <select id="nt-font">${fontOpts}</select>
   </div>
   <div class="narrator-row">
-    <div class="narrator-field"><label>Размер (px)</label>
+    <div class="narrator-field"><label>${L("FontSize")}</label>
       <input type="number" id="nt-size" value="${s.fontSize}" min="10" max="200"></div>
-    <div class="narrator-field"><label>Цвет</label>
+    <div class="narrator-field"><label>${L("Color")}</label>
       <input type="color" id="nt-color" value="${s.color}"></div>
   </div>
-  <div class="narrator-field"><label>Прозрачность</label>
+  <div class="narrator-field"><label>${L("Opacity")}</label>
     <div class="narrator-range-wrap">
       <input type="range" id="nt-opacity" min="0" max="1" step="0.05" value="${s.opacity}">
       <span id="nt-opacity-v">${Math.round(s.opacity * 100)}%</span>
     </div>
   </div>
-  <div class="narrator-field"><label>Ширина области (%)</label>
+  <div class="narrator-field"><label>${L("MaxWidth")}</label>
     <div class="narrator-range-wrap">
       <input type="range" id="nt-maxw" min="10" max="100" value="${s.maxWidth}">
       <span id="nt-maxw-v">${s.maxWidth}%</span>
     </div>
   </div>
-  <div class="narrator-field"><label>Выравнивание</label>
+  <div class="narrator-field"><label>${L("Alignment")}</label>
     <div class="narrator-align-btns">
-      <button class="narrator-align-btn" data-align="left"   data-sel="${s.align==="left"?"1":"0"}">← Лево</button>
-      <button class="narrator-align-btn" data-align="center" data-sel="${s.align==="center"?"1":"0"}">⊙ Центр</button>
-      <button class="narrator-align-btn" data-align="right"  data-sel="${s.align==="right"?"1":"0"}">→ Право</button>
+      <button class="narrator-align-btn" data-align="left"   data-sel="${s.align==="left"?"1":"0"}">${L("AlignLeft")}</button>
+      <button class="narrator-align-btn" data-align="center" data-sel="${s.align==="center"?"1":"0"}">${L("AlignCenter")}</button>
+      <button class="narrator-align-btn" data-align="right"  data-sel="${s.align==="right"?"1":"0"}">${L("AlignRight")}</button>
     </div>
   </div>
   <div class="narrator-check-field">
-    <input type="checkbox" id="nt-shadow"${s.shadow?" checked":""}><label for="nt-shadow">Тень текста</label>
+    <input type="checkbox" id="nt-shadow"${s.shadow?" checked":""}><label for="nt-shadow">${L("Shadow")}</label>
   </div>
   <div class="narrator-check-field">
-    <input type="checkbox" id="nt-outline"${s.outline?" checked":""}><label for="nt-outline">Обводка</label>
+    <input type="checkbox" id="nt-outline"${s.outline?" checked":""}><label for="nt-outline">${L("Outline")}</label>
   </div>
   <div class="narrator-field" id="nt-outline-color-row"${s.outline?"":" style=\"display:none\""}>
-    <label>Цвет обводки</label>
+    <label>${L("OutlineColor")}</label>
     <input type="color" id="nt-outline-color" value="${s.outlineColor}">
   </div>
-  <div class="narrator-section">Предпросмотр</div>
+  <div class="narrator-section">${L("Preview")}</div>
   <div id="nt-preview" class="narrator-font-preview"
     style="font-family:'${s.font}';font-size:${Math.min(s.fontSize,36)}px;color:${s.color};opacity:${s.opacity};text-align:${s.align}">
-    ${this._esc(this._msgs[0]?.text) || "Текст нарратора..."}
+    ${this._esc(this._msgs[0]?.text) || L("PreviewPlaceholder")}
   </div>
 </div>
 
 <!-- ── АНИМАЦИЯ ── -->
 <div class="narrator-tab-panel${this._tab==="anim"?" active":""}" data-panel="anim">
-  <div class="narrator-section">Появление</div>
+  <div class="narrator-section">${L("AnimIn")}</div>
   <div class="narrator-anim-grid">${animInBtns}</div>
-  <div class="narrator-section">Исчезновение</div>
+  <div class="narrator-section">${L("AnimOut")}</div>
   <div class="narrator-anim-grid">${animOutBtns}</div>
-  <div class="narrator-section">Тайминг</div>
-  <div class="narrator-field"><label>Появление (сек)</label>
+  <div class="narrator-section">${L("Timing")}</div>
+  <div class="narrator-field"><label>${L("FadeInDuration")}</label>
     <div class="narrator-range-wrap">
       <input type="range" id="nt-fin" min="0" max="10" step="0.5" value="${s.fadeInDuration}">
-      <span id="nt-fin-v">${s.fadeInDuration}с</span>
+      <span id="nt-fin-v">${s.fadeInDuration}${L("SecondsShort")}</span>
     </div>
   </div>
-  <div class="narrator-field"><label>Показ (сек)</label>
+  <div class="narrator-field"><label>${L("Duration")}</label>
     <div class="narrator-range-wrap">
       <input type="range" id="nt-dur" min="1" max="30" step="0.5" value="${s.duration}">
-      <span id="nt-dur-v">${s.duration}с</span>
+      <span id="nt-dur-v">${s.duration}${L("SecondsShort")}</span>
     </div>
   </div>
-  <div class="narrator-field"><label>Исчезновение (сек)</label>
+  <div class="narrator-field"><label>${L("FadeOutDuration")}</label>
     <div class="narrator-range-wrap">
       <input type="range" id="nt-fout" min="0" max="10" step="0.5" value="${s.fadeOutDuration}">
-      <span id="nt-fout-v">${s.fadeOutDuration}с</span>
+      <span id="nt-fout-v">${s.fadeOutDuration}${L("SecondsShort")}</span>
     </div>
   </div>
 </div>
@@ -363,7 +374,7 @@ class NarratorTextApp extends foundry.applications.api.ApplicationV2 {
 
   _buildTargetsHTML() {
     const active = game.users.filter(u => u.active && !u.isGM);
-    if (!active.length) return `<div class="narrator-no-players">Нет активных игроков</div>`;
+    if (!active.length) return `<div class="narrator-no-players">${L("NoActivePlayers")}</div>`;
 
     const allChecked = this._targets.size === 0;
     const rows = active.map(u => {
@@ -379,32 +390,32 @@ class NarratorTextApp extends foundry.applications.api.ApplicationV2 {
     return `<div class="narrator-target-item">
       <input type="checkbox" id="nt-t-all" class="nt-target" data-uid="all"${allChecked?" checked":""}>
       <label for="nt-t-all" class="narrator-target-label narrator-target-all">
-        <span class="narrator-target-icon">👥</span> Все игроки
+        <span class="narrator-target-icon">👥</span> ${L("AllPlayers")}
       </label></div>${rows}`;
   }
 
   _buildMsgsHTML() {
     return this._msgs.map((m, i) => {
-      const posOpts = Object.entries(POS_OPTIONS)
+      const posOpts = Object.entries(POS_OPTS())
         .map(([v,l]) => `<option value="${v}"${m.position===v?" selected":""}>${l}</option>`).join("");
       return `<div class="narrator-stack-item">
   ${this._msgs.length > 1 ? `
     <div class="narrator-stack-header">
-      <span class="narrator-stack-num">Надпись ${i + 1}</span>
+      <span class="narrator-stack-num">${LF("MessageNum", { n: i + 1 })}</span>
       <button class="narrator-stack-remove" data-rm="${i}">✕</button>
     </div>` : ""}
   <div class="narrator-field">
-    <textarea class="nt-msg-text" data-mi="${i}" placeholder="Текст надписи...">${this._esc(m.text)}</textarea>
+    <textarea class="nt-msg-text" data-mi="${i}" placeholder="${L("TextPlaceholder")}">${this._esc(m.text)}</textarea>
   </div>
   <div class="narrator-field">
-    <label>Позиция</label>
+    <label>${L("Position")}</label>
     <select class="nt-msg-pos" data-mi="${i}">${posOpts}</select>
   </div>
   ${m.position === "custom" ? `
   <div class="narrator-stack-pos-row">
-    <div class="narrator-field" style="flex:1"><label>X%</label>
+    <div class="narrator-field" style="flex:1"><label>${L("PosX")}</label>
       <input type="number" class="nt-msg-x" data-mi="${i}" value="${m.posX ?? 50}" min="0" max="100"></div>
-    <div class="narrator-field" style="flex:1"><label>Y%</label>
+    <div class="narrator-field" style="flex:1"><label>${L("PosY")}</label>
       <input type="number" class="nt-msg-y" data-mi="${i}" value="${m.posY ?? 50}" min="0" max="100"></div>
   </div>` : ""}
 </div>`;
@@ -412,23 +423,23 @@ class NarratorTextApp extends foundry.applications.api.ApplicationV2 {
   }
 
   _buildHistoryHTML() {
-    if (!this._history.length) return `<div class="narrator-history-empty">История пуста</div>`;
+    if (!this._history.length) return `<div class="narrator-history-empty">${L("HistoryEmpty")}</div>`;
     return [...this._history].reverse().map((e, ri) => {
       const idx     = this._history.length - 1 - ri;
       const preview = e.messages.map(m => m.text).filter(Boolean).join(" / ").substring(0, 60);
       const meta    = [
-        FONT_OPTIONS[e.style.font] ?? e.style.font,
+        FONT_OPTS()[e.style.font] ?? e.style.font,
         e.style.fontSize + "px",
-        ANIM_OPTIONS[e.style.animIn] ?? e.style.animIn,
-        e.style.duration + "с",
-        e.messages.length > 1 ? `${e.messages.length} надписи` : "",
+        ANIM_OPTS()[e.style.animIn] ?? e.style.animIn,
+        e.style.duration + L("SecondsShort"),
+        e.messages.length > 1 ? LF("MessagesCount", { n: e.messages.length }) : "",
       ].filter(Boolean).join(" · ");
       return `<div class="narrator-history-item">
   <div class="narrator-history-text">${this._esc(preview)}${preview.length >= 60 ? "…" : ""}</div>
   <div class="narrator-history-meta">${meta}</div>
   <div class="narrator-history-actions">
-    <button data-resend="${idx}">▶ Снова</button>
-    <button data-load="${idx}">⬇ Загрузить</button>
+    <button data-resend="${idx}">${L("Resend")}</button>
+    <button data-load="${idx}">${L("Load")}</button>
     <button class="del-btn" data-del="${idx}">✕</button>
   </div></div>`;
     }).join("");
@@ -567,9 +578,9 @@ class NarratorTextApp extends foundry.applications.api.ApplicationV2 {
           x.classList.toggle("selected", x.dataset.animOut === s.animOut));
       })
     );
-    this._bindRange(root, "#nt-fin",  "#nt-fin-v",  v => { s.fadeInDuration  = v; return v + "с"; });
-    this._bindRange(root, "#nt-dur",  "#nt-dur-v",  v => { s.duration        = v; return v + "с"; });
-    this._bindRange(root, "#nt-fout", "#nt-fout-v", v => { s.fadeOutDuration = v; return v + "с"; });
+    this._bindRange(root, "#nt-fin",  "#nt-fin-v",  v => { s.fadeInDuration  = v; return v + L("SecondsShort"); });
+    this._bindRange(root, "#nt-dur",  "#nt-dur-v",  v => { s.duration        = v; return v + L("SecondsShort"); });
+    this._bindRange(root, "#nt-fout", "#nt-fout-v", v => { s.fadeOutDuration = v; return v + L("SecondsShort"); });
 
     // Отправить
     root.querySelector("#nt-send")?.addEventListener("click", () => this._send());
@@ -596,7 +607,7 @@ class NarratorTextApp extends foundry.applications.api.ApplicationV2 {
     p.style.color      = s.color;
     p.style.opacity    = String(s.opacity);
     p.style.textAlign  = s.align;
-    p.textContent      = this._msgs[0]?.text || "Текст нарратора...";
+    p.textContent      = this._msgs[0]?.text || L("PreviewPlaceholder");
   }
 
   _addHistoryListeners(root) {
@@ -628,7 +639,7 @@ class NarratorTextApp extends foundry.applications.api.ApplicationV2 {
 
   _send() {
     const filled = this._msgs.filter(m => m.text.trim());
-    if (!filled.length) { ui.notifications.warn("Введите текст!"); return; }
+    if (!filled.length) { ui.notifications.warn(L("EnterText")); return; }
 
     const entry = {
       style:    { ...this._style },
@@ -653,7 +664,7 @@ class NarratorTextApp extends foundry.applications.api.ApplicationV2 {
 
     const names = payload.targets.length
       ? game.users.filter(u => payload.targets.includes(u.id)).map(u => u.name).join(", ")
-      : "все игроки";
+      : L("AllPlayers").toLowerCase();
     ui.notifications.info(`Narrator → ${names}`);
   }
 
